@@ -84,6 +84,15 @@ def map_level_to_values_caffeine(level):
 def main():
     st.title("Starbucks Drink Recommender")
 
+    st.markdown(
+        """
+        <div style='text-align:center;'>
+            <img src='https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png' alt='Starbucks Logo' width='200'/>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     # User input for preferences
     caffeine_level = st.selectbox("Select Caffeine level:", ['High', 'Medium', 'Low', 'Zero'])
     calories_level = st.selectbox("Select Calories level:", ['High', 'Medium', 'Low'])
