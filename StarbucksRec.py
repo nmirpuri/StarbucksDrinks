@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Read and clean the Starbucks dataset
-starbucks = pd.read_csv('/Users/nikhi/OneDrive/Desktop/OPT Application/Mirpuri Family Pics/Dubai/Starbucks McDonals Data/starbucks.csv')
+starbucks = pd.read_csv(r'starbucks.csv')
 starbucks.replace("Varies", pd.NA, inplace=True)
 starbucks.replace("varies", pd.NA, inplace=True)
 starbucks_clean = starbucks.dropna()
