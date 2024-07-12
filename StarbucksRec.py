@@ -32,10 +32,8 @@ def filter_drinks(df, preferences):
             filtered_df = filtered_df[filtered_df[column] == value_range]
         else:
             filtered_df = filtered_df[filtered_df[column].astype(float).between(*value_range)]
-
-        # Stop applying further filters if no results
-        if filtered_df.empty:
-            break
+        if not filtered_df.empty:
+            break  # Stop relaxing filters if we have results
 
     return filtered_df
 
@@ -82,19 +80,9 @@ def map_level_to_values_caffeine(level):
     elif level == 'Zero':
         return (0, 0)
 
-# Streamlit app with enhanced layout and styling
+# Streamlit app
 def main():
     st.title("Starbucks Drink Recommender")
-    
-    # HTML for displaying an image (Starbucks logo)
-    st.markdown(
-        """
-        <div style='text-align:center;'>
-            <img src='https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png' alt='Starbucks Logo' width='200'/>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 
     # User input for preferences
     caffeine_level = st.selectbox("Select Caffeine level:", ['High', 'Medium', 'Low', 'Zero'])
@@ -113,24 +101,16 @@ def main():
         'Beverage_prep': milk_type
     }
 
-    st.write("User Preferences:", preferences)
-
     filtered_starbucks = filter_drinks(starbucks_clean_df, preferences)
 
     if filtered_starbucks.empty:
         st.write("No exact matches found. Relaxing filters step by step.")
-        # Try relaxing one filter at a time
-        for column in ['Calories', ' Sugars (g)', ' Protein (g) ', ' Total Fat (g)']:
-            preferences_temp = preferences.copy()
-            preferences_temp[column] = 'Medium'  # Relaxing to 'Medium'
-            filtered_starbucks = filter_drinks(starbucks_clean_df, preferences_temp)
-            if not filtered_starbucks.empty:
-                break
+        filtered_starbucks = filter_drinks(starbucks_clean_df, preferences)
 
     filtered_starbucks = filtered_starbucks.drop_duplicates(subset=['Beverage']).head(5)
 
-    st.subheader("Recommended Starbucks Drinks based on your preferences:")
-    st.table(filtered_starbucks)
+    st.write("\nRecommended Starbucks Drinks based on your preferences:")
+    st.write(filtered_starbucks)
 
 if __name__ == "__main__":
     main()
