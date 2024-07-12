@@ -32,8 +32,10 @@ def filter_drinks(df, preferences):
             filtered_df = filtered_df[filtered_df[column] == value_range]
         else:
             filtered_df = filtered_df[filtered_df[column].astype(float).between(*value_range)]
-        if not filtered_df.empty:
-            break  # Stop relaxing filters if we have results
+
+        # Stop applying further filters if no results
+        if filtered_df.empty:
+            break
 
     return filtered_df
 
@@ -80,9 +82,19 @@ def map_level_to_values_caffeine(level):
     elif level == 'Zero':
         return (0, 0)
 
-# Streamlit app
+# Streamlit app with enhanced layout and styling
 def main():
     st.title("Starbucks Drink Recommender")
+    
+    # HTML for displaying an image (Starbucks logo)
+    st.markdown(
+        """
+        <div style='text-align:center;'>
+            <img src='https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png' alt='Starbucks Logo' width='200'/>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     # User input for preferences
     caffeine_level = st.selectbox("Select Caffeine level:", ['High', 'Medium', 'Low', 'Zero'])
@@ -109,8 +121,8 @@ def main():
 
     filtered_starbucks = filtered_starbucks.drop_duplicates(subset=['Beverage']).head(5)
 
-    st.write("\nRecommended Starbucks Drinks based on your preferences:")
-    st.write(filtered_starbucks)
+    st.subheader("Recommended Starbucks Drinks based on your preferences:")
+    st.table(filtered_starbucks)
 
 if __name__ == "__main__":
     main()
