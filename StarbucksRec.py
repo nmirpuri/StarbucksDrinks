@@ -113,11 +113,19 @@ def main():
         'Beverage_prep': milk_type
     }
 
+    st.write("User Preferences:", preferences)
+
     filtered_starbucks = filter_drinks(starbucks_clean_df, preferences)
 
     if filtered_starbucks.empty:
         st.write("No exact matches found. Relaxing filters step by step.")
-        filtered_starbucks = filter_drinks(starbucks_clean_df, preferences)
+        # Try relaxing one filter at a time
+        for column in ['Calories', ' Sugars (g)', ' Protein (g) ', ' Total Fat (g)']:
+            preferences_temp = preferences.copy()
+            preferences_temp[column] = 'Medium'  # Relaxing to 'Medium'
+            filtered_starbucks = filter_drinks(starbucks_clean_df, preferences_temp)
+            if not filtered_starbucks.empty:
+                break
 
     filtered_starbucks = filtered_starbucks.drop_duplicates(subset=['Beverage']).head(5)
 
