@@ -13,6 +13,30 @@ def load_data():
 
 starbucks_clean_df = load_data()
 
+# Function to filter the dataset based on user preferences with prioritized relaxation
+def filter_drinks(df, preferences):
+    filters = {
+        'Caffeine (mg)': map_level_to_values_caffeine(preferences['Caffeine (mg)']),
+        'Calories': map_level_to_values_calories(preferences['Calories']),
+        ' Sugars (g)': map_level_to_values_sugars(preferences[' Sugars (g)']),
+        'Beverage_prep': preferences['Beverage_prep'],
+        ' Protein (g) ': map_level_to_values_protein(preferences[' Protein (g) ']),
+        ' Total Fat (g)': map_level_to_values_total_fat(preferences[' Total Fat (g)'])
+    }
+
+    filtered_df = df.copy()
+
+    # Apply filters in the order of importance
+    for column, value_range in filters.items():
+        if column == 'Beverage_prep':
+            filtered_df = filtered_df[filtered_df[column] == value_range]
+        else:
+            filtered_df = filtered_df[filtered_df[column].astype(float).between(*value_range)]
+        if not filtered_df.empty:
+            break  # Stop relaxing filters if we have results
+
+    return filtered_df
+
 # Mapping of levels to numeric values for filtering
 def map_level_to_values_sugars(level):
     if level == 'High':
@@ -56,56 +80,37 @@ def map_level_to_values_caffeine(level):
     elif level == 'Zero':
         return (0, 0)
 
-# Function to filter the dataset based on user preferences with prioritized relaxation
-def filter_drinks(df, preferences):
-    filters = {
-        'Caffeine (mg)': map_level_to_values_caffeine(preferences['Caffeine (mg)']),
-        'Calories': map_level_to_values_calories(preferences['Calories']),
-        ' Sugars (g)': map_level_to_values_sugars(preferences[' Sugars (g)']),
-        'Beverage_prep': preferences['Beverage_prep'],
-        ' Protein (g) ': map_level_to_values_protein(preferences[' Protein (g) ']),
-        ' Total Fat (g)': map_level_to_values_total_fat(preferences[' Total Fat (g)'])
+# Streamlit app
+def main():
+    st.title("Starbucks Drink Recommender")
+
+    # User input for preferences
+    caffeine_level = st.selectbox("Select Caffeine level:", ['High', 'Medium', 'Low', 'Zero'])
+    calories_level = st.selectbox("Select Calories level:", ['High', 'Medium', 'Low'])
+    sugars_level = st.selectbox("Select Sugar level:", ['High', 'Medium', 'Low'])
+    protein_level = st.selectbox("Select Protein level:", ['High', 'Medium', 'Low'])
+    total_fat_level = st.selectbox("Select Total Fat level:", ['High', 'Medium', 'Low'])
+    milk_type = st.selectbox("Select Milk type:", ['2% Milk', 'Grande Nonfat Milk', 'Short Nonfat Milk', 'Soymilk', 'Tall Nonfat Milk', 'Venti Nonfat Milk', 'Whole Milk'])
+
+    preferences = {
+        'Calories': calories_level,
+        ' Protein (g) ': protein_level,
+        ' Total Fat (g)': total_fat_level,
+        ' Sugars (g)': sugars_level,
+        'Caffeine (mg)': caffeine_level,
+        'Beverage_prep': milk_type
     }
 
-    filtered_df = df.copy()
-
-    # Apply filters in the order of importance
-    for column, value_range in filters.items():
-        if column == 'Beverage_prep':
-            filtered_df = filtered_df[filtered_df[column] == value_range]
-        else:
-            filtered_df = filtered_df[filtered_df[column].astype(float).between(*value_range)]
-        if not filtered_df.empty:
-            break  # Stop relaxing filters if we have results
-
-    return filtered_df
-
-# Streamlit app
-st.title("Starbucks Drink Recommender")
-
-caffeine_level = st.selectbox("Enter Caffeine level:", ['High', 'Medium', 'Low', 'Zero'])
-calories_level = st.selectbox("Enter Calories level:", ['High', 'Medium', 'Low'])
-sugars_level = st.selectbox("Enter Sugar level:", ['High', 'Medium', 'Low'])
-protein_level = st.selectbox("Enter Protein level:", ['High', 'Medium', 'Low'])
-total_fat_level = st.selectbox("Enter Total Fat level:", ['High', 'Medium', 'Low'])
-milk_type = st.selectbox("Enter Milk type:", ['2% Milk', 'Grande Nonfat Milk', 'Short Nonfat Milk', 'Soymilk', 'Tall Nonfat Milk', 'Venti Nonfat Milk', 'Whole Milk'])
-
-preferences = {
-    'Calories': calories_level,
-    ' Protein (g) ': protein_level,
-    ' Total Fat (g)': total_fat_level,
-    ' Sugars (g)': sugars_level,
-    'Caffeine (mg)': caffeine_level,
-    'Beverage_prep': milk_type
-}
-
-filtered_starbucks = filter_drinks(starbucks_clean_df, preferences)
-
-if filtered_starbucks.empty:
-    st.write("No exact matches found. Relaxing filters step by step.")
     filtered_starbucks = filter_drinks(starbucks_clean_df, preferences)
 
-filtered_starbucks = filtered_starbucks.drop_duplicates(subset=['Beverage']).head(5)
+    if filtered_starbucks.empty:
+        st.write("No exact matches found. Relaxing filters step by step.")
+        filtered_starbucks = filter_drinks(starbucks_clean_df, preferences)
 
-st.write("\nRecommended Starbucks Drinks based on your preferences:")
-st.write(filtered_starbucks)
+    filtered_starbucks = filtered_starbucks.drop_duplicates(subset=['Beverage']).head(5)
+
+    st.write("\nRecommended Starbucks Drinks based on your preferences:")
+    st.write(filtered_starbucks)
+
+if __name__ == "__main__":
+    main()
