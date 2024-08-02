@@ -8,18 +8,17 @@ def load_data():
     starbucks.replace("Varies", pd.NA, inplace=True)
     starbucks.replace("varies", pd.NA, inplace=True)
     starbucks_clean = starbucks.dropna()
-    columns_to_include = ['Beverage', 'Calories', ' Total Fat (g)', ' Sugars (g)', ' Protein (g) ', 'Caffeine (mg)', 'Beverage_prep']
+    columns_to_include = ['Beverage', 'Calories', ' Total Fat (g)', ' Sugars (g)', ' Protein (g) ', 'Caffeine (mg)']
     return starbucks_clean[columns_to_include]
 
 starbucks_clean_df = load_data()
 
-# Function to filter the dataset based on user preferences with prioritized relaxation
+# Function to filter the dataset based on user preferences
 def filter_drinks(df, preferences):
     filters = {
         'Caffeine (mg)': map_level_to_values_caffeine(preferences['Caffeine (mg)']),
         'Calories': map_level_to_values_calories(preferences['Calories']),
         ' Sugars (g)': map_level_to_values_sugars(preferences[' Sugars (g)']),
-        'Beverage_prep': preferences['Beverage_prep'],
         ' Protein (g) ': map_level_to_values_protein(preferences[' Protein (g) ']),
         ' Total Fat (g)': map_level_to_values_total_fat(preferences[' Total Fat (g)'])
     }
@@ -29,33 +28,25 @@ def filter_drinks(df, preferences):
 
     # Apply filters based on user preferences
     for column, value_range in filters.items():
-        if column == 'Beverage_prep':
-            filtered_df = filtered_df[filtered_df[column] == value_range]
-        else:
-            # Convert column to numeric and handle errors
-            filtered_df[column] = pd.to_numeric(filtered_df[column], errors='coerce')
-            if filtered_df[column].isnull().all():
-                st.write(f"Warning: The column '{column}' has no valid numeric data.")
-                continue
-            filtered_df = filtered_df[filtered_df[column].between(*value_range)]
+        # Convert column to numeric and handle errors
+        filtered_df[column] = pd.to_numeric(filtered_df[column], errors='coerce')
+        if filtered_df[column].isnull().all():
+            st.write(f"Warning: The column '{column}' has no valid numeric data.")
+            continue
+        filtered_df = filtered_df[filtered_df[column].between(*value_range)]
         applied_filters.append(column)
     
     # Check if the filtered dataframe is empty
     if filtered_df.empty:
         st.write("No exact matches found. Relaxing filters step by step.")
         for column in applied_filters:
-            if column == 'Beverage_prep':
-                continue
             value_range = filters[column]
             filtered_df = df.copy()
             for applied_column in applied_filters:
                 if applied_column == column:
                     continue
-                if applied_column == 'Beverage_prep':
-                    filtered_df = filtered_df[filtered_df[applied_column] == filters[applied_column]]
-                else:
-                    filtered_df[applied_column] = pd.to_numeric(filtered_df[applied_column], errors='coerce')
-                    filtered_df = filtered_df[filtered_df[applied_column].between(*filters[applied_column])]
+                filtered_df[applied_column] = pd.to_numeric(filtered_df[applied_column], errors='coerce')
+                filtered_df = filtered_df[filtered_df[applied_column].between(*filters[applied_column])]
             filtered_df = filtered_df[filtered_df[column].between(*value_range)]
             if not filtered_df.empty:
                 break
@@ -124,15 +115,13 @@ def main():
     sugars_level = st.selectbox("Select Sugar level:", ['High', 'Medium', 'Low'])
     protein_level = st.selectbox("Select Protein level:", ['High', 'Medium', 'Low'])
     total_fat_level = st.selectbox("Select Total Fat level:", ['High', 'Medium', 'Low'])
-    milk_type = st.selectbox("Select Milk type:", ['2% Milk', 'Grande Nonfat Milk', 'Short Nonfat Milk', 'Soymilk', 'Tall Nonfat Milk', 'Venti Nonfat Milk', 'Whole Milk'])
 
     preferences = {
         'Calories': calories_level,
         ' Protein (g) ': protein_level,
         ' Total Fat (g)': total_fat_level,
         ' Sugars (g)': sugars_level,
-        'Caffeine (mg)': caffeine_level,
-        'Beverage_prep': milk_type
+        'Caffeine (mg)': caffeine_level
     }
 
     filtered_starbucks = filter_drinks(starbucks_clean_df, preferences)
@@ -148,3 +137,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
