@@ -25,15 +25,38 @@ def filter_drinks(df, preferences):
     }
 
     filtered_df = df.copy()
+    applied_filters = []
 
-    # Apply filters in the order of importance
+    # Apply filters based on user preferences
     for column, value_range in filters.items():
         if column == 'Beverage_prep':
             filtered_df = filtered_df[filtered_df[column] == value_range]
         else:
-            filtered_df = filtered_df[filtered_df[column].astype(float).between(*value_range)]
-        if not filtered_df.empty:
-            break  # Stop relaxing filters if we have results
+            # Ensure the column is numeric for filtering
+            filtered_df[column] = pd.to_numeric(filtered_df[column], errors='coerce')
+            filtered_df = filtered_df[filtered_df[column].between(*value_range)]
+        applied_filters.append(column)
+    
+    # Check if the filtered dataframe is empty
+    if filtered_df.empty:
+        st.write("No exact matches found. Relaxing filters step by step.")
+        # Relax filters one by one
+        for column in applied_filters:
+            if column == 'Beverage_prep':
+                continue
+            value_range = filters[column]
+            filtered_df = df.copy()
+            for applied_column in applied_filters:
+                if applied_column == column:
+                    continue
+                if applied_column == 'Beverage_prep':
+                    filtered_df = filtered_df[filtered_df[applied_column] == filters[applied_column]]
+                else:
+                    filtered_df[applied_column] = pd.to_numeric(filtered_df[applied_column], errors='coerce')
+                    filtered_df = filtered_df[filtered_df[applied_column].between(*filters[applied_column])]
+            filtered_df = filtered_df[filtered_df[column].between(*value_range)]
+            if not filtered_df.empty:
+                break
 
     return filtered_df
 
