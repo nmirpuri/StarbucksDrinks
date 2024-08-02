@@ -42,7 +42,7 @@ def filter_drinks(df, preferences):
             continue
         
         # Debug output
-        st.write(f"Filtering column: {column} with range {value_range}")
+      
         
         try:
             filtered_df = filtered_df[filtered_df[column].between(*value_range)]
@@ -53,7 +53,7 @@ def filter_drinks(df, preferences):
 
     # Check if the filtered dataframe is empty
     if filtered_df.empty:
-        st.write("No drinks match your preferences.")
+        st.write("No drinks match your preference exactly. Flexing the constraints...")
         return filtered_df
 
     return filtered_df
