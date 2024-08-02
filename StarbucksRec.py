@@ -16,11 +16,11 @@ starbucks_clean_df = load_data()
 # Function to filter the dataset based on user preferences
 def filter_drinks(df, preferences):
     filters = {
-        'Caffeine (mg)': map_level_to_values_caffeine(preferences['Caffeine (mg)']),
-        'Calories': map_level_to_values_calories(preferences['Calories']),
-        ' Sugars (g)': map_level_to_values_sugars(preferences[' Sugars (g)']),
-        ' Protein (g) ': map_level_to_values_protein(preferences[' Protein (g) ']),
-        ' Total Fat (g)': map_level_to_values_total_fat(preferences[' Total Fat (g)'])
+        'Caffeine (mg)': map_level_to_values_caffeine(preferences.get('Caffeine (mg)')),
+        'Calories': map_level_to_values_calories(preferences.get('Calories')),
+        ' Sugars (g)': map_level_to_values_sugars(preferences.get(' Sugars (g)')),
+        ' Protein (g) ': map_level_to_values_protein(preferences.get(' Protein (g) ')),
+        ' Total Fat (g)': map_level_to_values_total_fat(preferences.get(' Total Fat (g)'))
     }
 
     filtered_df = df.copy()
@@ -28,6 +28,9 @@ def filter_drinks(df, preferences):
 
     # Apply filters based on user preferences
     for column, value_range in filters.items():
+        if value_range is None:
+            continue
+        
         if column not in filtered_df.columns:
             st.write(f"Warning: The column '{column}' does not exist in the data.")
             continue
@@ -47,26 +50,11 @@ def filter_drinks(df, preferences):
             st.write(f"Error filtering column '{column}': {e}")
 
         applied_filters.append(column)
-    
+
     # Check if the filtered dataframe is empty
     if filtered_df.empty:
-        st.write("No exact matches found. Relaxing filters step by step.")
-        for column in applied_filters:
-            if column == 'Beverage_prep':
-                continue
-            value_range = filters[column]
-            filtered_df = df.copy()
-            for applied_column in applied_filters:
-                if applied_column == column:
-                    continue
-                if applied_column == 'Beverage_prep':
-                    filtered_df = filtered_df[filtered_df[applied_column] == filters[applied_column]]
-                else:
-                    filtered_df[applied_column] = pd.to_numeric(filtered_df[applied_column], errors='coerce')
-                    filtered_df = filtered_df[filtered_df[applied_column].between(*filters[applied_column])]
-            filtered_df = filtered_df[filtered_df[column].between(*value_range)]
-            if not filtered_df.empty:
-                break
+        st.write("No drinks match your preferences.")
+        return filtered_df
 
     return filtered_df
 
@@ -78,6 +66,8 @@ def map_level_to_values_sugars(level):
         return (15, 40)
     elif level == 'Low':
         return (0, 15)
+    elif level == 'No Preference':
+        return None
 
 def map_level_to_values_calories(level):
     if level == 'High':
@@ -86,6 +76,8 @@ def map_level_to_values_calories(level):
         return (120, 260)
     elif level == 'Low':
         return (0, 120)
+    elif level == 'No Preference':
+        return None
 
 def map_level_to_values_protein(level):
     if level == 'High':
@@ -94,6 +86,8 @@ def map_level_to_values_protein(level):
         return (5, 10)
     elif level == 'Low':
         return (0, 5)
+    elif level == 'No Preference':
+        return None
 
 def map_level_to_values_total_fat(level):
     if level == 'High':
@@ -102,6 +96,8 @@ def map_level_to_values_total_fat(level):
         return (0.5, 4)
     elif level == 'Low':
         return (0, 0.5)
+    elif level == 'No Preference':
+        return None
 
 def map_level_to_values_caffeine(level):
     if level == 'High':
@@ -112,6 +108,8 @@ def map_level_to_values_caffeine(level):
         return (1, 50)
     elif level == 'Zero':
         return (0, 0)
+    elif level == 'No Preference':
+        return None
 
 # Streamlit app
 def main():
@@ -127,11 +125,11 @@ def main():
     )
 
     # User input for preferences
-    caffeine_level = st.selectbox("Select Caffeine level:", ['High', 'Medium', 'Low', 'Zero'])
-    calories_level = st.selectbox("Select Calories level:", ['High', 'Medium', 'Low'])
-    sugars_level = st.selectbox("Select Sugar level:", ['High', 'Medium', 'Low'])
-    protein_level = st.selectbox("Select Protein level:", ['High', 'Medium', 'Low'])
-    total_fat_level = st.selectbox("Select Total Fat level:", ['High', 'Medium', 'Low'])
+    caffeine_level = st.selectbox("Select Caffeine level:", ['High', 'Medium', 'Low', 'Zero', 'No Preference'])
+    calories_level = st.selectbox("Select Calories level:", ['High', 'Medium', 'Low', 'No Preference'])
+    sugars_level = st.selectbox("Select Sugar level:", ['High', 'Medium', 'Low', 'No Preference'])
+    protein_level = st.selectbox("Select Protein level:", ['High', 'Medium', 'Low', 'No Preference'])
+    total_fat_level = st.selectbox("Select Total Fat level:", ['High', 'Medium', 'Low', 'No Preference'])
 
     preferences = {
         'Calories': calories_level,
@@ -144,15 +142,14 @@ def main():
     filtered_starbucks = filter_drinks(starbucks_clean_df, preferences)
 
     if filtered_starbucks.empty:
-        st.write("No exact matches found. Relaxing filters step by step.")
-        filtered_starbucks = filter_drinks(starbucks_clean_df, preferences)
-
-    filtered_starbucks = filtered_starbucks.drop_duplicates(subset=['Beverage']).head(5)
-
-    st.write("\nRecommended Starbucks Drinks based on your preferences:")
-    st.write(filtered_starbucks)
+        st.write("No drinks match your preferences.")
+    else:
+        filtered_starbucks = filtered_starbucks.drop_duplicates(subset=['Beverage']).head(5)
+        st.write("Recommended Starbucks Drinks based on your preferences:")
+        st.write(filtered_starbucks)
 
 if __name__ == "__main__":
     main()
+
 
 
