@@ -32,15 +32,17 @@ def filter_drinks(df, preferences):
         if column == 'Beverage_prep':
             filtered_df = filtered_df[filtered_df[column] == value_range]
         else:
-            # Ensure the column is numeric for filtering
+            # Convert column to numeric and handle errors
             filtered_df[column] = pd.to_numeric(filtered_df[column], errors='coerce')
+            if filtered_df[column].isnull().all():
+                st.write(f"Warning: The column '{column}' has no valid numeric data.")
+                continue
             filtered_df = filtered_df[filtered_df[column].between(*value_range)]
         applied_filters.append(column)
     
     # Check if the filtered dataframe is empty
     if filtered_df.empty:
         st.write("No exact matches found. Relaxing filters step by step.")
-        # Relax filters one by one
         for column in applied_filters:
             if column == 'Beverage_prep':
                 continue
