@@ -4,7 +4,7 @@ import streamlit as st
 # Read and clean the Starbucks dataset
 @st.cache
 def load_data():
-    starbucks = pd.read_csv(r'starbucks.csv')
+    starbucks = pd.read_csv('starbucks.csv')
     starbucks.replace("Varies", pd.NA, inplace=True)
     starbucks.replace("varies", pd.NA, inplace=True)
     starbucks_clean = starbucks.dropna()
@@ -28,25 +28,42 @@ def filter_drinks(df, preferences):
 
     # Apply filters based on user preferences
     for column, value_range in filters.items():
+        if column not in filtered_df.columns:
+            st.write(f"Warning: The column '{column}' does not exist in the data.")
+            continue
+        
         # Convert column to numeric and handle errors
         filtered_df[column] = pd.to_numeric(filtered_df[column], errors='coerce')
         if filtered_df[column].isnull().all():
             st.write(f"Warning: The column '{column}' has no valid numeric data.")
             continue
-        filtered_df = filtered_df[filtered_df[column].between(*value_range)]
+        
+        # Debug output
+        st.write(f"Filtering column: {column} with range {value_range}")
+        
+        try:
+            filtered_df = filtered_df[filtered_df[column].between(*value_range)]
+        except Exception as e:
+            st.write(f"Error filtering column '{column}': {e}")
+
         applied_filters.append(column)
     
     # Check if the filtered dataframe is empty
     if filtered_df.empty:
         st.write("No exact matches found. Relaxing filters step by step.")
         for column in applied_filters:
+            if column == 'Beverage_prep':
+                continue
             value_range = filters[column]
             filtered_df = df.copy()
             for applied_column in applied_filters:
                 if applied_column == column:
                     continue
-                filtered_df[applied_column] = pd.to_numeric(filtered_df[applied_column], errors='coerce')
-                filtered_df = filtered_df[filtered_df[applied_column].between(*filters[applied_column])]
+                if applied_column == 'Beverage_prep':
+                    filtered_df = filtered_df[filtered_df[applied_column] == filters[applied_column]]
+                else:
+                    filtered_df[applied_column] = pd.to_numeric(filtered_df[applied_column], errors='coerce')
+                    filtered_df = filtered_df[filtered_df[applied_column].between(*filters[applied_column])]
             filtered_df = filtered_df[filtered_df[column].between(*value_range)]
             if not filtered_df.empty:
                 break
@@ -137,4 +154,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
